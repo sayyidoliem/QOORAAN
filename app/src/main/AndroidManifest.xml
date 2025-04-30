@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.QOORAAN"
+        tools:targetApi="31">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.QOORAAN">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+
+
+
+<!--    <?xml version="1.0" encoding="utf-8"?>-->
+<!--<manifest xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--xmlns:tools="http://schemas.android.com/tools">-->
+
+<!--<uses-permission android:name="android.permission.INTERNET"/>-->
+<!--<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>-->
+<!--<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>-->
+<!--<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>-->
+
+<!--&lt;!&ndash; for start foreground service &ndash;&gt;-->
+<!--<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />-->
+
+<!--&lt;!&ndash; for play in the background &ndash;&gt;-->
+<!--<uses-permission android:name="android.permission.WAKE_LOCK" />-->
+
+<!--&lt;!&ndash; Optional: for play local music &ndash;&gt;-->
+<!--<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />-->
+<!--<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"-->
+<!--    android:maxSdkVersion="32" />-->
+<!--<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />-->
+
+<!--&lt;!&ndash; Optional: for play network music &ndash;&gt;-->
+<!--<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />-->
+<!--&lt;!&ndash;    <uses-permission android:name="android.permission.INTERNET" />&ndash;&gt;-->
+<!--&lt;!&ndash;    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />&ndash;&gt;-->
+<!--<application-->
+<!--    android:allowBackup="true"-->
+<!--    android:dataExtractionRules="@xml/data_extraction_rules"-->
+<!--    android:fullBackupContent="@xml/backup_rules"-->
+<!--    android:icon="@mipmap/ic_launcher"-->
+<!--    android:label="@string/app_name"-->
+<!--    android:roundIcon="@mipmap/ic_launcher_round"-->
+<!--    android:supportsRtl="true"-->
+<!--    android:theme="@style/Theme.QOORAANApp"-->
+<!--    tools:targetApi="31">-->
+<!--    <activity-->
+<!--        android:name=".MainActivity"-->
+<!--        android:exported="true"-->
+<!--        android:theme="@style/Theme.QOORAANApp">-->
+<!--        <intent-filter>-->
+<!--            <action android:name="android.intent.action.MAIN" />-->
+
+<!--            <category android:name="android.intent.category.LAUNCHER" />-->
+<!--        </intent-filter>-->
+<!--    </activity>-->
+<!--    <service-->
+<!--        android:name=".service.player.MyPlayerServices"-->
+<!--        android:exported="true"-->
+<!--        android:foregroundServiceType="mediaPlayback"-->
+<!--        android:permission="TODO">-->
+<!--        <intent-filter>-->
+<!--            <action android:name="android.media.browse.MediaBrowserService" />-->
+<!--        </intent-filter>-->
+<!--    </service>-->
+
+<!--    <receiver android:name="androidx.media.session.MediaButtonReceiver"-->
+<!--        android:exported="true">-->
+<!--        <intent-filter>-->
+<!--            <action android:name="android.intent.action.MEDIA_BUTTON" />-->
+<!--        </intent-filter>-->
+<!--    </receiver>-->
+
+<!--    <receiver android:name=".ui.glance.Receiver$PrayerTimeWidgetReceiver"-->
+<!--        android:exported="true"-->
+<!--        android:label="Prayer Time Widget">-->
+<!--        <intent-filter>-->
+<!--            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />-->
+<!--        </intent-filter>-->
+<!--        <meta-data-->
+<!--            android:name="android.appwidget.provider"-->
+<!--            android:resource="@xml/widget_info" />-->
+<!--    </receiver>-->
+<!--    <receiver android:name=".ui.glance.Receiver$LastReadWidgetReceiver"-->
+<!--        android:exported="true">-->
+<!--        <intent-filter>-->
+<!--            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />-->
+<!--        </intent-filter>-->
+<!--        <meta-data-->
+<!--            android:name="android.appwidget.provider"-->
+<!--            android:resource="@xml/widget_info" />-->
+<!--    </receiver>-->
+<!--</application>-->
+<!--</manifest>-->
