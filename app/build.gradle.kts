@@ -1,6 +1,5 @@
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.kotlin.dsl.configure
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
@@ -8,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 configure<ApplicationExtension> {
@@ -19,8 +19,7 @@ configure<ApplicationExtension> {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0.0"
-
+        versionName = "2.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -116,4 +115,9 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 }
