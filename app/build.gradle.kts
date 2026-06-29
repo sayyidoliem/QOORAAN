@@ -19,7 +19,7 @@ configure<ApplicationExtension> {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "2.0.1"
+        versionName = "3.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -94,9 +94,9 @@ dependencies {
     implementation(libs.converter.gson)
 
     // SharedPreferences helper
-    implementation(libs.chibatching.kotpref)
-    implementation(libs.kotpref.initializer)
-    implementation(libs.enum.support)
+//    implementation(libs.chibatching.kotpref)
+//    implementation(libs.kotpref.initializer)
+//    implementation(libs.enum.support)
 
     // Media player
     implementation(libs.player)
