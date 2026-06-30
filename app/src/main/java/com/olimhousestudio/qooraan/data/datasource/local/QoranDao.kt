@@ -18,13 +18,13 @@ interface QoranDao {
     fun getAllQoranAyah(): Flow<List<Qoran>>
 
     @Query("SELECT * FROM quran WHERE sora = :indexSora")
-    fun getAyatSurah(indexSora : Int):Flow<List<Qoran>>
+    fun getAyatSurah(indexSora: Int): Flow<List<Qoran>>
 
     @Query("SELECT * FROM quran WHERE jozz = :indexJozz")
-    fun getAyatJozz(indexJozz : Int):Flow<List<Qoran>>
+    fun getAyatJozz(indexJozz: Int): Flow<List<Qoran>>
 
     @Query("SELECT * FROM quran WHERE page = :indexPage")
-    fun getAyatPage(indexPage : Int): Flow<List<Qoran>>
+    fun getAyatPage(indexPage: Int): Flow<List<Qoran>>
 
     @Query("SELECT * FROM surah")
     fun getSurah(): Flow<List<Surah>>
@@ -39,8 +39,8 @@ interface QoranDao {
     fun getSurahjuz(): Flow<List<SurahJuz>>
 
     @Query("SELECT * FROM SurahSearch where sora_name_emlaey like '%'|| :soraNameEmlay || '%' OR aya_text_emlaey like '%'|| :soraNameEmlay || '%'")
-    fun getSurahBySearch(soraNameEmlay:String):Flow<List<SurahSearch>>
+    fun getSurahBySearch(soraNameEmlay: String): Flow<List<SurahSearch>>
 
     @Query("SELECT * FROM AyatSearch where aya_text_emlaey like '%'|| :ayatNameEmlay || '%' OR translation_en like '%'|| :ayatNameEmlay || '%' OR aya_text like '%'|| :ayatNameEmlay || '%'")
-    fun getAyatBySearch(ayatNameEmlay:String):Flow<List<AyatSearch>>
+    fun getAyatBySearch(ayatNameEmlay: String): Flow<List<AyatSearch>>
 }
