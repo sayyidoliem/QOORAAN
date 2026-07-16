@@ -8,5 +8,5 @@ data class Page(
     @ColumnInfo(name = "page") val page: Int = 0,
     @ColumnInfo(name = "sora_name_en") val surahNameEn: String = "",
     @ColumnInfo(name = "sora_name_ar") val surahNameAr: String? = "",
-    @ColumnInfo(name = "sora") val surahNumber: Int? = 0,
+    @ColumnInfo(name = "sora") val surahNumber: Int,
 )
