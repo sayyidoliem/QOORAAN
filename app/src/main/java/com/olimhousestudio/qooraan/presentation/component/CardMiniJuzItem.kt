@@ -13,40 +13,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
+import com.olimhousestudio.qooraan.presentation.viewmodel.quran.JuzSurahItemUi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JuzCardMiniItem(
-    surahList: List<String?>,
-    surahNumberList: List<Int?>,
-    onItemClick: (Int?) -> Unit
+    items: List<JuzSurahItemUi>,
+    onItemClick: (Int) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        if (surahList.isNotEmpty() && surahNumberList.isNotEmpty()) {
-            for (index in surahList.indices) {
-                Card(
-                    modifier = Modifier.padding(8.dp),
-                    onClick = { onItemClick(surahNumberList[index]) }
+        items.forEach { item ->
+            Card(
+                modifier = Modifier.padding(8.dp),
+                onClick = { onItemClick(item.surahNumber) }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "${surahNumberList[index]}.",
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "${surahList[index]}",
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        )
-
-                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = "${item.surahNumber}.")
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = item.surahName)
                 }
             }
         }

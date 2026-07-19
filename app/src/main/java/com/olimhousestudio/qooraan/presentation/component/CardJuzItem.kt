@@ -27,31 +27,28 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import com.olimhousestudio.qooraan.presentation.viewmodel.quran.JuzSurahItemUi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JuzCardItem(
     juzNumber: Int,
-    surahList: List<String?>,
-    surahNumberList: List<Int?>,
-    goToRead: (Int?) -> Unit,
+    items: List<JuzSurahItemUi>,
+    goToRead: (Int) -> Unit,
+) {
+    var isExpanded by remember { mutableStateOf(false) }
 
-    ) {
-    var isSurahListShowed by remember {
-        mutableStateOf(false)
-    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clip(RoundedCornerShape(10)),
+            .clip(RoundedCornerShape(10.dp)),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         onClick = {
-            if (surahNumberList.isNotEmpty()) {
-                goToRead.invoke(surahNumberList.first()!!)
+            if (items.isNotEmpty()) {
+                goToRead(items.first().surahNumber)
             }
         }
     ) {
@@ -69,29 +66,29 @@ fun JuzCardItem(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp), Alignment.TopEnd
+                        .padding(16.dp),
+                    contentAlignment = Alignment.TopEnd
                 ) {
                     IconButton(
-                        onClick = {
-                            isSurahListShowed = !isSurahListShowed
-                        },
-                        modifier = Modifier.align(Alignment.TopEnd)
+                        onClick = { isExpanded = !isExpanded }
                     ) {
                         Icon(
-                            imageVector = if (!isSurahListShowed) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                            contentDescription = "",
+                            imageVector = if (isExpanded) {
+                                Icons.Default.KeyboardArrowUp
+                            } else {
+                                Icons.Default.KeyboardArrowDown
+                            },
+                            contentDescription = null
                         )
                     }
                 }
             }
         }
-        AnimatedVisibility(visible = isSurahListShowed) {
+
+        AnimatedVisibility(visible = isExpanded) {
             JuzCardMiniItem(
-                surahList = surahList,
-                surahNumberList = surahNumberList,
-                onItemClick = { surahNumber ->
-                    goToRead(surahNumber)
-                },
+                items = items,
+                onItemClick = goToRead
             )
         }
     }

@@ -14,20 +14,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 
-
 @Composable
 fun FavoriteButton(
+    isFavorite: Boolean,
+    onToggle: () -> Unit,
     modifier: Modifier = Modifier,
     color: Color = Color(0xffE91E63)
 ) {
-
-    var isFavorite by remember { mutableStateOf(false) }
-
     IconToggleButton(
         checked = isFavorite,
-        onCheckedChange = {
-            isFavorite = !isFavorite
-        }
+        onCheckedChange = { onToggle() }
     ) {
         Icon(
             tint = color,
