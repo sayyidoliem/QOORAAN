@@ -15,16 +15,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.RestoreFromTrash
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -36,26 +32,29 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.olimhousestudio.qooraan.data.datasource.local.BookmarkDatabase
-import com.olimhousestudio.qooraan.utils.LastReadPreferences
-import com.olimhousestudio.qooraan.utils.SettingPreferences
-import kotlinx.coroutines.launch
+import com.olimhousestudio.qooraan.domain.model.bookmark.AyahBookmarkDomain
+import com.olimhousestudio.qooraan.domain.model.bookmark.SurahBookmarkDomain
+import com.olimhousestudio.qooraan.presentation.viewmodel.bookmark.BookmarkType
+import com.olimhousestudio.qooraan.presentation.viewmodel.bookmark.BookmarkUiState
+import com.olimhousestudio.qooraan.presentation.viewmodel.bookmark.BookmarkViewModel
+import com.olimhousestudio.qooraan.domain.model.AppSettings
 import java.text.SimpleDateFormat
 import java.util.Date
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.platform.LocalLocale
+import com.olimhousestudio.qooraan.domain.model.LastRead
 import java.util.Locale
 
 @Composable
@@ -63,557 +62,466 @@ fun BookmarkScreens(
     modifier: Modifier,
     goToRead: (surahNumber: Int?, juzNumber: Int?, pageNumber: Int?, index: Int?) -> Unit
 ) {
-    val context = LocalContext.current
-    val bookmarkDao = BookmarkDatabase.getInstance(context).bookmarkDao()
-    val list = bookmarkDao.getSurahBookmark()
-    val scope = rememberCoroutineScope()
+    val viewModel: BookmarkViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsState()
 
-    val snackbarHostState = remember {
-        SnackbarHostState()
+    BookmarkScreenContent(
+        modifier = modifier,
+        uiState = uiState,
+        onTypeChange = viewModel::changeBookmarkType,
+        onDeleteSurahBookmark = viewModel::deleteSurahBookmark,
+        onUndoDeleteSurahBookmark = viewModel::undoDeleteSurahBookmark,
+        onDeleteAyahBookmark = viewModel::deleteAyahBookmark,
+        onUndoDeleteAyahBookmark = viewModel::undoDeleteAyahBookmark,
+        goToRead = goToRead
+    )
+}
+
+@Composable
+private fun BookmarkScreenContent(
+    modifier: Modifier,
+    uiState: BookmarkUiState,
+    onTypeChange: (BookmarkType) -> Unit,
+    onDeleteSurahBookmark: (SurahBookmarkDomain) -> Unit,
+    onUndoDeleteSurahBookmark: () -> Unit,
+    onDeleteAyahBookmark: (AyahBookmarkDomain) -> Unit,
+    onUndoDeleteAyahBookmark: () -> Unit,
+    goToRead: (surahNumber: Int?, juzNumber: Int?, pageNumber: Int?, index: Int?) -> Unit
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val isIndonesia = uiState.selectedLanguage == AppSettings.INDONESIA
+
+    var isTypeDialogOpen by remember { mutableStateOf(false) }
+    var tempSelectedType by remember(uiState.selectedType) {
+        mutableStateOf(uiState.selectedType)
     }
 
-    var isSortedDialogOpen by remember {
-        mutableStateOf(false)
+    val removeMessage = if (isIndonesia) {
+        "Hapus bookmark"
+    } else {
+        "Remove bookmark"
     }
-    val radioOptions = listOf("Surah","Ayat")
-    var selectedOption by remember { mutableStateOf(radioOptions[0]) }
 
-    var selectedOptionTemp by remember {
-        mutableStateOf(radioOptions[0])
+    val undoMessage = if (isIndonesia) {
+        "Kembalikan"
+    } else {
+        "Undo"
     }
 
     Scaffold(
+        modifier = modifier,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
-        },
-    ) {
-        Column {
-            val date = SimpleDateFormat(
-                "dd/MMM/yyyy",
-                Locale.getDefault()
-            ).format(Date(LastReadPreferences.lastDate))
-            when (selectedOption) {
-                radioOptions[0] -> {
-                    list.collectAsState(initial = emptyList()).let { state ->
-                        LazyColumn(
-                            Modifier
-                                .background(MaterialTheme.colorScheme.background)
-                                .fillMaxSize()
-                        ) {
-                            item {
-                                Row(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text =  when (SettingPreferences.isSelectedLanguage) {
-                                            SettingPreferences.INDONESIA -> {
-                                                "Terakhir Dibaca"
-                                            }
-
-                                            else -> {
-                                                "Last Read"
-                                            }
-                                        },
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        modifier = Modifier.align(Alignment.CenterVertically)
-                                    )
-                                    IconButton(
-                                        onClick = { isSortedDialogOpen = true },
-                                        modifier = Modifier.align(Alignment.CenterVertically)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.Sort,
-                                            contentDescription = "",
-                                        )
-                                    }
-                                }
-                                when {
-                                    LastReadPreferences.lastSurahName.isNotEmpty() -> {
-                                        ListItem(
-                                            headlineContent = {
-                                                Text(
-                                                    text = LastReadPreferences.lastSurahName,
-                                                    style = MaterialTheme.typography.titleLarge
-                                                )
-                                            },
-                                            leadingContent = {
-                                                Card(
-                                                    modifier = Modifier
-                                                        .padding(12.dp)
-                                                        .size(34.dp),
-                                                    colors = CardDefaults.cardColors(
-                                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                                    )
-                                                ) {
-                                                    Box(Modifier.fillMaxSize()) {
-                                                        Text(
-                                                            text = LastReadPreferences.lastSurahNumber.toString(),
-                                                            modifier = Modifier.align(Alignment.Center)
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            trailingContent = { Text(text = date.toString()) },
-                                            supportingContent = { Text(text = "Ayat ${LastReadPreferences.lastAyaNo}") },
-                                            modifier = Modifier.clickable {
-                                                goToRead.invoke(
-                                                    LastReadPreferences.lastSurahNumber,
-                                                    null,
-                                                    null,
-                                                    LastReadPreferences.index
-                                                )
-                                            }
-                                        )
-                                    }
-                                    else -> {
-                                        ListItem(
-                                            headlineContent = {
-                                                Text(
-                                                    text =  when (SettingPreferences.isSelectedLanguage) {
-                                                        SettingPreferences.INDONESIA -> {
-                                                            "Kamu belum membaca ayat apapun"
-                                                        }
-
-                                                        else -> {
-                                                            "You doesn't read anything ayat"
-                                                        }
-                                                    },
-                                                    style = MaterialTheme.typography.titleLarge
-                                                )
-                                            },
-                                            modifier = Modifier.clickable {
-                                                goToRead.invoke(
-                                                    LastReadPreferences.lastSurahNumber,
-                                                    null,
-                                                    null,
-                                                    LastReadPreferences.index
-                                                )
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            item {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp)
-                                ) {
-                                    Text(
-                                        text =  when (SettingPreferences.isSelectedLanguage) {
-                                            SettingPreferences.INDONESIA -> {
-                                                "Penanda Surat"
-                                            }
-
-                                            else -> {
-                                                "Surah Bookmarks"
-                                            }
-                                        },
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        modifier = Modifier.align(Alignment.CenterStart)
-                                    )
-                                    IconButton(
-                                        onClick = { isSortedDialogOpen = true },
-                                        modifier = Modifier.align(Alignment.CenterEnd)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.RestoreFromTrash,
-                                            contentDescription = "",
-                                        )
-                                    }
-                                }
-                            }
-                            items(state.value) {
-                                Box(Modifier.fillMaxSize()) {
-                                    ListItem(
-                                        headlineContent = {
-                                            Text(
-                                                "${it.surahNameEn} | ${it.surahNameAr}",
-                                                style = MaterialTheme.typography.titleLarge
-                                            )
-                                        },
-                                        overlineContent = {
-                                            Text(
-                                                text = "Juz ${it.juzNumber} | ${it.surahDescend}",
-                                                style = MaterialTheme.typography.bodyLarge
-                                            )
-                                        },
-                                        supportingContent = { Text("${it.totalAyah} Ayat") },
-                                        trailingContent = {
-                                            IconButton(onClick = {
-                                                scope.launch {
-                                                    bookmarkDao.deleteSurahBookmark(surahBookmark = it)
-                                                    val result = snackbarHostState
-                                                        .showSnackbar(
-                                                            message =  when (SettingPreferences.isSelectedLanguage) {
-                                                                SettingPreferences.INDONESIA -> {
-                                                                    "Hapus penanda"
-                                                                }
-
-                                                                else -> {
-                                                                    "Remove bookmark"
-                                                                }
-                                                            },
-                                                            actionLabel =  when (SettingPreferences.isSelectedLanguage) {
-                                                                SettingPreferences.INDONESIA -> {
-                                                                    "Kembalikan"
-                                                                }
-
-                                                                else -> {
-                                                                    "Undo"
-                                                                }
-                                                            },
-                                                            // Defaults to SnackbarDuration.Short
-                                                            duration = SnackbarDuration.Short
-                                                        )
-                                                    when (result) {
-                                                        SnackbarResult.ActionPerformed -> {
-                                                            /* Handle snackbar action performed */
-                                                            bookmarkDao.insertSurahBookmark(
-                                                                surahBookmark = it
-                                                            )
-                                                        }
-
-                                                        SnackbarResult.Dismissed -> {
-                                                            /* Handle snackbar dismissed */
-                                                            bookmarkDao.deleteSurahBookmark(
-                                                                surahBookmark = it
-                                                            )
-
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Delete,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        },
-                                        leadingContent = {
-                                            Card(
-                                                modifier = Modifier
-                                                    .padding(12.dp)
-                                                    .size(34.dp),
-                                                colors = CardDefaults.cardColors(
-                                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                                )
-                                            ) {
-                                                Box(Modifier.fillMaxSize()) {
-                                                    Text(
-                                                        text = "${it.surahNumber}",
-                                                        modifier = Modifier.align(Alignment.Center)
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                            .clickable {
-                                                goToRead.invoke(
-                                                    it.surahNumber,
-                                                    null,
-                                                    null,
-                                                    null
-                                                )
-                                            }
-                                    )
-                                }
-                                HorizontalDivider(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    thickness = 2.dp,
-                                )
-                            }
-                        }
-                    }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background)
+                .fillMaxSize()
+        ) {
+            when (uiState.selectedType) {
+                BookmarkType.SURAH -> {
+                    SurahBookmarkList(
+                        bookmarks = uiState.surahBookmarks,
+                        lastRead = uiState.lastRead,
+                        selectedLanguage = uiState.selectedLanguage,
+                        onOpenTypeDialog = { isTypeDialogOpen = true },
+                        onDelete = onDeleteSurahBookmark,
+                        goToRead = goToRead
+                    )
                 }
-                else -> {
-                    bookmarkDao.getAllBookmarks().collectAsState(initial = emptyList()).let { state ->
-                        LazyColumn(
-                            Modifier
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(it)
-                                .fillMaxSize()
-                        ) {
-                            item {
-                                Row(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text =  when (SettingPreferences.isSelectedLanguage) {
-                                            SettingPreferences.INDONESIA -> {
-                                                "Terakhir Dibaca"
-                                            }
 
-                                            else -> {
-                                                "Last Read"
-                                            }
-                                        },
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        modifier = Modifier.align(Alignment.CenterVertically)
-                                    )
-                                    IconButton(
-                                        onClick = { isSortedDialogOpen = true },
-                                        modifier = Modifier.align(Alignment.CenterVertically)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Filled.Sort,
-                                            contentDescription = "",
-                                        )
-                                    }
-                                }
-                                when {
-                                    LastReadPreferences.lastSurahName.isNotEmpty() -> {
-                                        ListItem(
-                                            headlineContent = {
-                                                Text(
-                                                    text = LastReadPreferences.lastSurahName,
-                                                    style = MaterialTheme.typography.titleLarge
-                                                )
-                                            },
-                                            leadingContent = {
-                                                Card(
-                                                    modifier = Modifier
-                                                        .padding(12.dp)
-                                                        .size(34.dp),
-                                                    colors = CardDefaults.cardColors(
-                                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                                    )
-                                                ) {
-                                                    Box(Modifier.fillMaxSize()) {
-                                                        Text(
-                                                            text = LastReadPreferences.lastSurahNumber.toString(),
-                                                            modifier = Modifier.align(Alignment.Center)
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            trailingContent = { Text(text = date.toString()) },
-                                            supportingContent = { Text(text = "Ayat ${LastReadPreferences.lastAyaNo}") },
-                                            modifier = Modifier.clickable {
-                                                goToRead.invoke(
-                                                    LastReadPreferences.lastSurahNumber,
-                                                    null,
-                                                    null,
-                                                    LastReadPreferences.index
-                                                )
-                                            }
-                                        )
-                                    }
-                                    else -> {
-                                        ListItem(
-                                            headlineContent = {
-                                                Text(
-                                                    text =  when (SettingPreferences.isSelectedLanguage) {
-                                                        SettingPreferences.INDONESIA -> {
-                                                            "Kamu belum membaca ayat apapun"
-                                                        }
-
-                                                        else -> {
-                                                            "You doesn't read anything ayat"
-                                                        }
-                                                    },
-                                                    style = MaterialTheme.typography.titleLarge
-                                                )
-                                            },
-                                            modifier = Modifier.clickable {
-                                                goToRead.invoke(
-                                                    LastReadPreferences.lastSurahNumber,
-                                                    null,
-                                                    null,
-                                                    LastReadPreferences.index
-                                                )
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            item {
-                                Row(
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp)
-                                ) {
-                                    Text(
-                                        text =  when (SettingPreferences.isSelectedLanguage) {
-                                            SettingPreferences.INDONESIA -> {
-                                                "Penanda Ayat"
-                                            }
-
-                                            else -> {
-                                                "Ayat Bookmarks"
-                                            }
-                                        },
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        modifier = Modifier.align(Alignment.CenterVertically)
-                                    )
-                                    IconButton(
-                                        onClick = { isSortedDialogOpen = true },
-                                        modifier = Modifier.align(Alignment.CenterVertically)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.RestoreFromTrash,
-                                            contentDescription = "",
-                                        )
-                                    }
-                                }
-                            }
-                            items(state.value) {
-                                ListItem(
-                                    headlineContent = {
-                                        Text(
-                                            it.surahName!!,
-                                            style = MaterialTheme.typography.titleLarge
-                                        )
-                                    },
-                                    supportingContent = {
-                                        Text(
-                                            "Ayat ${it.ayahNumber}",
-                                            style = MaterialTheme.typography.bodyLarge
-                                        )
-                                    },
-                                    trailingContent = {
-                                        IconButton(onClick = {
-                                            scope.launch {
-                                                bookmarkDao.deleteBookmark(bookmark = it)
-                                                val result = snackbarHostState
-                                                    .showSnackbar(
-                                                        message =  when (SettingPreferences.isSelectedLanguage) {
-                                                            SettingPreferences.INDONESIA -> {
-                                                                "Hapus bookmark"
-                                                            }
-
-                                                            else -> {
-                                                                "Remove bookmark"
-                                                            }
-                                                        },
-                                                        actionLabel =  when (SettingPreferences.isSelectedLanguage) {
-                                                            SettingPreferences.INDONESIA -> {
-                                                                "Kembalikan"
-                                                            }
-
-                                                            else -> {
-                                                                "Undo"
-                                                            }
-                                                        },
-                                                        // Defaults to SnackbarDuration.Short
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                when (result) {
-                                                    SnackbarResult.ActionPerformed -> {
-                                                        /* Handle snackbar action performed */
-                                                        bookmarkDao.insertBookmark(bookmark = it)
-                                                    }
-
-                                                    SnackbarResult.Dismissed -> {
-                                                        /* Handle snackbar dismissed */
-                                                        bookmarkDao.deleteBookmark(bookmark = it)
-
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = null
-                                            )
-                                        }
-                                    },
-                                    leadingContent = {
-                                        Card(
-                                            modifier = Modifier
-                                                .padding(12.dp)
-                                                .size(34.dp),
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                            )
-                                        ) {
-                                            Box(Modifier.fillMaxSize()) {
-                                                Text(
-                                                    text = "${it.surahNumber}",
-                                                    modifier = Modifier.align(Alignment.Center)
-                                                )
-                                            }
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .clickable {}
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                                HorizontalDivider(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp), thickness = 2.dp,
-                                )
-                            }
-                        }
-                    }
+                BookmarkType.AYAH -> {
+                    AyahBookmarkList(
+                        bookmarks = uiState.ayahBookmarks,
+                        lastRead = uiState.lastRead,
+                        selectedLanguage = uiState.selectedLanguage,
+                        goToRead = goToRead,
+                        onOpenTypeDialog = { isTypeDialogOpen = true },
+                        onDelete = onDeleteAyahBookmark
+                    )
                 }
             }
         }
-
     }
-    if (isSortedDialogOpen) {
-        AlertDialog(
-            onDismissRequest = { isSortedDialogOpen = !isSortedDialogOpen },
-            title = { Text(text = "Select Bookmarks ") },
-            text = {
-                Column {
-                    radioOptions.forEach { option ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = (option == selectedOptionTemp),
-                                onClick = { selectedOptionTemp = option }
-                            )
-                            TextButton(onClick = { selectedOptionTemp = option }) {
-                                Text(
-                                    text = option,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
 
-                        }
-                    }
-                }
+    LaunchedEffect(uiState.recentlyDeletedSurahBookmark) {
+        if (uiState.recentlyDeletedSurahBookmark != null) {
+            val result = snackbarHostState.showSnackbar(
+                message = removeMessage,
+                actionLabel = undoMessage,
+                duration = SnackbarDuration.Short
+            )
+
+            if (result == SnackbarResult.ActionPerformed) {
+                onUndoDeleteSurahBookmark()
+            }
+        }
+    }
+
+    LaunchedEffect(uiState.recentlyDeletedAyahBookmark) {
+        if (uiState.recentlyDeletedAyahBookmark != null) {
+            val result = snackbarHostState.showSnackbar(
+                message = removeMessage,
+                actionLabel = undoMessage,
+                duration = SnackbarDuration.Short
+            )
+
+            if (result == SnackbarResult.ActionPerformed) {
+                onUndoDeleteAyahBookmark()
+            }
+        }
+    }
+
+    if (isTypeDialogOpen) {
+        BookmarkTypeDialog(
+            selectedType = tempSelectedType,
+            onSelectedTypeChange = { tempSelectedType = it },
+            onConfirm = {
+                onTypeChange(tempSelectedType)
+                isTypeDialogOpen = false
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    isSortedDialogOpen = !isSortedDialogOpen
-                    selectedOption = selectedOptionTemp
-                }) {
-                    Text("Confirm")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { isSortedDialogOpen = !isSortedDialogOpen }) {
-                    Text("Dismiss")
-                }
+            onDismiss = {
+                tempSelectedType = uiState.selectedType
+                isTypeDialogOpen = false
             }
         )
     }
 }
 
+@Composable
+private fun LastReadSection(
+    lastRead: LastRead,
+    selectedLanguage: Int,
+    goToRead: (surahNumber: Int?, juzNumber: Int?, pageNumber: Int?, index: Int?) -> Unit
+) {
+    val isIndonesia = selectedLanguage == AppSettings.INDONESIA
+
+    val lastDateText = if (lastRead.lastDate > 0) {
+        SimpleDateFormat(
+            "dd/MMM/yyyy",
+            LocalLocale.current.platformLocale
+        ).format(Date(lastRead.lastDate))
+    } else {
+        "-"
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = if (isIndonesia) {
+                "Terakhir Dibaca"
+            } else {
+                "Last Read"
+            },
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.align(Alignment.CenterVertically)
+        )
+    }
+
+    if (lastRead.surahName.isNotEmpty()) {
+        ListItem(
+            headlineContent = {
+                Text(
+                    text = lastRead.surahName,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            leadingContent = {
+                NumberCard(number = lastRead.surahNumber.toString())
+            },
+            trailingContent = {
+                Text(text = lastDateText)
+            },
+            supportingContent = {
+                Text(text = "Ayat ${lastRead.ayahNumber}")
+            },
+            modifier = Modifier.clickable {
+                goToRead(
+                    lastRead.surahNumber,
+                    null,
+                    null,
+                    lastRead.index
+                )
+            }
+        )
+    } else {
+        ListItem(
+            headlineContent = {
+                Text(
+                    text = if (isIndonesia) {
+                        "Kamu belum membaca ayat apapun"
+                    } else {
+                        "You have not read any ayah yet"
+                    },
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
+        )
+    }
+}
+
+@Composable
+private fun SurahBookmarkList(
+    bookmarks: List<SurahBookmarkDomain>,
+    lastRead: LastRead,
+    selectedLanguage: Int,
+    onOpenTypeDialog: () -> Unit,
+    onDelete: (SurahBookmarkDomain) -> Unit,
+    goToRead: (surahNumber: Int?, juzNumber: Int?, pageNumber: Int?, index: Int?) -> Unit
+) {
+    val isIndonesia = selectedLanguage == AppSettings.INDONESIA
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        item {
+            LastReadSection(
+                goToRead = goToRead,
+                selectedLanguage = selectedLanguage,
+                lastRead = lastRead
+            )
+
+            SectionHeader(
+                title = if (isIndonesia) {
+                    "Penanda Surat"
+                } else {
+                    "Surah Bookmarks"
+                },
+                onActionClick = onOpenTypeDialog,
+                actionIcon = Icons.AutoMirrored.Filled.Sort
+            )
+        }
+
+        items(bookmarks) { bookmark ->
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = "${bookmark.surahNameEn} | ${bookmark.surahNameAr}",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                overlineContent = {
+                    Text(
+                        text = "Juz ${bookmark.juzNumber} | ${bookmark.surahDescend}",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                },
+                supportingContent = {
+                    Text(text = "${bookmark.totalAyah} Ayat")
+                },
+                leadingContent = {
+                    NumberCard(number = "${bookmark.surahNumber}")
+                },
+                trailingContent = {
+                    IconButton(onClick = { onDelete(bookmark) }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .clickable {
+                        goToRead(
+                            bookmark.surahNumber,
+                            null,
+                            null,
+                            null
+                        )
+                    }
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 2.dp
+            )
+        }
+    }
+}
+
+@Composable
+private fun AyahBookmarkList(
+    bookmarks: List<AyahBookmarkDomain>,
+    onOpenTypeDialog: () -> Unit,
+    onDelete: (AyahBookmarkDomain) -> Unit,
+    lastRead: LastRead,
+    selectedLanguage: Int,
+    goToRead: (surahNumber: Int?, juzNumber: Int?, pageNumber: Int?, index: Int?) -> Unit
+) {
+    val isIndonesia = selectedLanguage == AppSettings.INDONESIA
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        item {
+            LastReadSection(
+                lastRead = lastRead,
+                selectedLanguage = selectedLanguage,
+                goToRead = goToRead,
+            )
+
+            SectionHeader(
+                title = if (isIndonesia) {
+                    "Penanda Ayat"
+                } else {
+                    "Ayah Bookmarks"
+                },
+                onActionClick = onOpenTypeDialog,
+                actionIcon = Icons.AutoMirrored.Filled.Sort
+            )
+        }
+
+        items(bookmarks) { bookmark ->
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = bookmark.surahName.orEmpty(),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = "Ayat ${bookmark.ayahNumber}",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                },
+                leadingContent = {
+                    NumberCard(number = "${bookmark.surahNumber}")
+                },
+                trailingContent = {
+                    IconButton(onClick = { onDelete(bookmark) }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                thickness = 2.dp
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(
+    title: String,
+    onActionClick: () -> Unit,
+    actionIcon: ImageVector
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Text(
+            text = title,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.align(Alignment.CenterStart)
+        )
+
+        IconButton(
+            onClick = onActionClick,
+            modifier = Modifier.align(Alignment.CenterEnd)
+        ) {
+            Icon(
+                imageVector = actionIcon,
+                contentDescription = null
+            )
+        }
+    }
+}
+
+@Composable
+private fun NumberCard(number: String) {
+    Card(
+        modifier = Modifier
+            .padding(12.dp)
+            .size(34.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            Text(
+                text = number,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BookmarkTypeDialog(
+    selectedType: BookmarkType,
+    onSelectedTypeChange: (BookmarkType) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val options = listOf(
+        BookmarkType.SURAH to "Surah",
+        BookmarkType.AYAH to "Ayat"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Select Bookmarks") },
+        text = {
+            Column {
+                options.forEach { (type, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = type == selectedType,
+                            onClick = { onSelectedTypeChange(type) }
+                        )
+
+                        TextButton(
+                            onClick = { onSelectedTypeChange(type) }
+                        ) {
+                            Text(
+                                text = label,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Dismiss")
+            }
+        }
+    )
+}
