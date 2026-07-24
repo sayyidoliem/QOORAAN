@@ -1,6 +1,5 @@
 package com.olimhousestudio.qooraan.presentation.view
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.view.ViewGroup
@@ -47,124 +46,177 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.just.agentweb.AgentWeb
 
-@SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FindQiblat(
     openDrawer: () -> Unit
 ) {
-    val activity = LocalContext.current as Activity
     val context = LocalContext.current
-    val url = "https://qiblafinder.withgoogle.com/intl/id/"
-    var expanded by remember { mutableStateOf(false) }
-    var openDialog by remember { mutableStateOf(false) }
-    var textSubject by rememberSaveable { mutableStateOf("") }
-    var textMessage by rememberSaveable { mutableStateOf(("")) }
+    val activity = context as? Activity ?: return
+
+    val qiblaUrl = "https://qiblafinder.withgoogle.com/intl/id/"
+    val developerEmail = "sayyid.olim12@gmail.com"
+
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+
+    var openDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var textSubject by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    var textMessage by rememberSaveable {
+        mutableStateOf("")
+    }
+
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(title = {
-                Text(
-                    text = "Qiblat",
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            },
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Qiblat",
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { openDrawer() }) {
+                    IconButton(onClick = openDrawer) {
                         Icon(
                             imageVector = Icons.Default.Menu,
-                            contentDescription = "",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
                 actions = {
-                    IconButton(onClick = { expanded = true }) {
+                    IconButton(
+                        onClick = {
+                            expanded = true
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
+
                     DropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = {
+                            expanded = false
+                        }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Share") },
+                            text = {
+                                Text("Share")
+                            },
                             onClick = {
-                                val sendIntent: Intent = Intent().apply {
+                                val sendIntent = Intent().apply {
                                     action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_TEXT, "Qiblat Finder by : $url")
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        "Qiblat Finder by: $qiblaUrl"
+                                    )
                                     type = "text/plain"
                                 }
-                                val shareIntent = Intent.createChooser(sendIntent, null)
+
+                                val shareIntent = Intent.createChooser(
+                                    sendIntent,
+                                    null
+                                )
+
                                 context.startActivity(shareIntent)
                                 expanded = false
                             },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.Share,
+                                    imageVector = Icons.Outlined.Share,
                                     contentDescription = null
                                 )
-                            })
+                            }
+                        )
+
                         DropdownMenuItem(
-                            text = { Text("Send Feedback") },
+                            text = {
+                                Text("Send Feedback")
+                            },
                             onClick = {
                                 openDialog = true
                                 expanded = false
                             },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.Email,
+                                    imageVector = Icons.Outlined.Email,
                                     contentDescription = null
                                 )
                             },
-                            trailingIcon = { Text("F11", textAlign = TextAlign.Center) })
+                            trailingIcon = {
+                                Text(
+                                    text = "F11",
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        )
                     }
                 }
             )
         },
-    ) {
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it),
+                .padding(innerPadding),
             contentAlignment = Alignment.Center
         ) {
-            AndroidView(//ambil view yg ada di xml buat compose
-                factory = { context ->
-                    LinearLayout(context).apply {
-                        layoutParams = ViewGroup.LayoutParams(//parameter kayak width n height
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { androidContext ->
+                    LinearLayout(androidContext).apply {
+                        layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.MATCH_PARENT
                         )
+
                         AgentWeb.with(activity)
-                            .setAgentWebParent(this, this.layoutParams)
+                            .setAgentWebParent(this, layoutParams)
                             .useDefaultIndicator()
                             .createAgentWeb()
                             .ready()
-                            .go(url)//masukin urlnya
+                            .go(qiblaUrl)
                     }
                 }
             )
         }
     }
+
     if (openDialog) {
         Dialog(
             properties = DialogProperties(
                 usePlatformDefaultWidth = false
             ),
-            onDismissRequest = { openDialog = false }
+            onDismissRequest = {
+                openDialog = false
+            }
         ) {
-            // In order to make the dialog full screen, we need to use
-            // Modifier.fillMaxSize()
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text(text = "Send E-mail To Developer") },
+                        title = {
+                            Text(text = "Send E-mail To Developer")
+                        },
                         navigationIcon = {
-                            IconButton(onClick = { openDialog = false }) {
+                            IconButton(
+                                onClick = {
+                                    openDialog = false
+                                }
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = null
@@ -173,53 +225,92 @@ fun FindQiblat(
                         },
                     )
                 }
-            ) {
+            ) { dialogPadding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(it)
+                        .padding(dialogPadding)
                         .background(MaterialTheme.colorScheme.surface),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(verticalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        verticalArrangement = Arrangement.SpaceAround,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
                         OutlinedTextField(
                             modifier = Modifier
                                 .fillMaxWidth()
-
                                 .padding(horizontal = 16.dp),
-                            value = "sayyid.olim12@gmail.com",
+                            value = developerEmail,
                             onValueChange = {},
-                            label = { Text("To") })
+                            readOnly = true,
+                            label = {
+                                Text("To")
+                            }
+                        )
+
                         OutlinedTextField(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                                ,
+                                .padding(horizontal = 16.dp),
                             value = textSubject,
-                            onValueChange = { textSubject = it },
-                            placeholder = { Text(text = "example : bugs, criticism, suggestions") },
-                            label = { Text("Subject") })
+                            onValueChange = {
+                                textSubject = it
+                            },
+                            placeholder = {
+                                Text(text = "example: bugs, criticism, suggestions")
+                            },
+                            label = {
+                                Text("Subject")
+                            }
+                        )
+
                         OutlinedTextField(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(2f)
                                 .padding(horizontal = 16.dp),
                             value = textMessage,
-                            onValueChange = { textMessage = it },
-                            label = { Text("Message") },
+                            onValueChange = {
+                                textMessage = it
+                            },
+                            label = {
+                                Text("Message")
+                            }
                         )
+
                         Button(
-                            onClick = { /* Handle send email */ },
-                            Modifier
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    putExtra(
+                                        Intent.EXTRA_EMAIL,
+                                        arrayOf(developerEmail)
+                                    )
+                                    putExtra(Intent.EXTRA_SUBJECT, textSubject)
+                                    putExtra(Intent.EXTRA_TEXT, textMessage)
+                                    type = "message/rfc822"
+                                }
+
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        intent,
+                                        "Choose an Email client"
+                                    )
+                                )
+                            },
+                            modifier = Modifier
                                 .align(Alignment.End)
-                                .padding(end = 16.dp, bottom = 16.dp, top = 8.dp)
+                                .padding(
+                                    end = 16.dp,
+                                    bottom = 16.dp,
+                                    top = 8.dp
+                                )
                         ) {
                             Text("Send")
                         }
                     }
                 }
             }
-
         }
     }
 }

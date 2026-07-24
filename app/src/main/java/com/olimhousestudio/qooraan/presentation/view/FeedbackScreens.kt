@@ -22,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,117 +35,132 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.olimhousestudio.qooraan.utils.SettingPreferences
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.olimhousestudio.qooraan.domain.model.AppSettings
+import com.olimhousestudio.qooraan.presentation.viewmodel.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FeedbackScreens(openDrawer: () -> Unit) {
-    var openDialog by remember { mutableStateOf(false) }
-    var textSubject by rememberSaveable { mutableStateOf("") }
-    var textMessage by rememberSaveable { mutableStateOf("") }
+fun FeedbackScreens(
+    openDrawer: () -> Unit
+) {
+    val viewModel: SettingsViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsState()
+
+    val isIndonesia = uiState.selectedLanguage == AppSettings.INDONESIA
     val context = LocalContext.current
+    val developerEmail = "sayyid.olim12@gmail.com"
+
+    var openDialog by remember {
+        mutableStateOf(false)
+    }
+
+    var textSubject by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    var textMessage by rememberSaveable {
+        mutableStateOf("")
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = when (SettingPreferences.isSelectedLanguage) {
-                            SettingPreferences.INDONESIA -> {
-                                "Umpan Balik"
-                            }
-
-                            else -> {
-                                "Feedback"
-                            }
-                        },
+                        text = if (isIndonesia) {
+                            "Umpan Balik"
+                        } else {
+                            "Feedback"
+                        }
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { openDrawer() }) {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = null)
+                    IconButton(onClick = openDrawer) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = null
+                        )
                     }
-                },
+                }
             )
         }
-    ) {
+    ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .padding(it)
+                .padding(innerPadding)
                 .fillMaxSize()
         ) {
             Text(
-                text = when (SettingPreferences.isSelectedLanguage) {
-                    SettingPreferences.INDONESIA -> {
-                        "Apakah Anda memiliki kritik, saran, atau umpan balik? Kirimkan pesan kepada kami"
-                    }
-
-                    else -> {
-                        "Do you have any criticism, suggestions, or feedback? Send us a message"
-                    }
+                text = if (isIndonesia) {
+                    "Apakah Anda memiliki kritik, saran, atau umpan balik? Kirimkan pesan kepada kami."
+                } else {
+                    "Do you have any criticism, suggestions, or feedback? Send us a message."
                 },
                 modifier = Modifier.padding(16.dp),
                 textAlign = TextAlign.Center
             )
-            Button(onClick = { openDialog = true }) {
-                Text(
-                    text = when (SettingPreferences.isSelectedLanguage) {
-                        SettingPreferences.INDONESIA -> {
-                            "Kirim Pesan"
-                        }
 
-                        else -> {
-                            "Send Message"
-                        }
-                    },
+            Button(
+                onClick = {
+                    openDialog = true
+                }
+            ) {
+                Text(
+                    text = if (isIndonesia) {
+                        "Kirim Pesan"
+                    } else {
+                        "Send Message"
+                    }
                 )
             }
         }
+
         if (openDialog) {
             Dialog(
                 properties = DialogProperties(
                     usePlatformDefaultWidth = false
                 ),
-                onDismissRequest = { openDialog = false }
+                onDismissRequest = {
+                    openDialog = false
+                }
             ) {
-                // In order to make the dialog full screen, we need to use
-                // Modifier.fillMaxSize()
                 Scaffold(
                     topBar = {
                         TopAppBar(
                             title = {
                                 Text(
-                                    text = when (SettingPreferences.isSelectedLanguage) {
-                                        SettingPreferences.INDONESIA -> {
-                                            "Kirim E-mail kepada Developer"
-                                        }
-
-                                        else -> {
-                                            "Send E-mail To Developer"
-                                        }
-                                    },
+                                    text = if (isIndonesia) {
+                                        "Kirim E-mail kepada Developer"
+                                    } else {
+                                        "Send E-mail To Developer"
+                                    }
                                 )
                             },
                             navigationIcon = {
-                                IconButton(onClick = { openDialog = false }) {
+                                IconButton(
+                                    onClick = {
+                                        openDialog = false
+                                    }
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = null
                                     )
                                 }
-                            },
+                            }
                         )
                     }
-                ) {
+                ) { dialogPadding ->
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(it)
+                            .padding(dialogPadding)
                             .background(MaterialTheme.colorScheme.surface),
                         contentAlignment = Alignment.Center
                     ) {
-                        var emailDeveloper = "sayyid.olim12@gmail.com"
                         Column(
                             verticalArrangement = Arrangement.SpaceAround,
                             modifier = Modifier.fillMaxSize()
@@ -152,116 +168,103 @@ fun FeedbackScreens(openDrawer: () -> Unit) {
                             OutlinedTextField(
                                 modifier = Modifier
                                     .fillMaxWidth()
-
                                     .padding(horizontal = 16.dp),
-                                value = emailDeveloper,
-                                onValueChange = { emailDeveloper = it },
+                                value = developerEmail,
+                                onValueChange = {},
+                                readOnly = true,
                                 label = {
                                     Text(
-                                        when (SettingPreferences.isSelectedLanguage) {
-                                            SettingPreferences.INDONESIA -> {
-                                                "Kepada"
-                                            }
-
-                                            else -> {
-                                                "To"
-                                            }
-                                        },
+                                        text = if (isIndonesia) {
+                                            "Kepada"
+                                        } else {
+                                            "To"
+                                        }
                                     )
-                                },
+                                }
                             )
+
                             OutlinedTextField(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp),
                                 value = textSubject,
-                                onValueChange = { textSubject = it },
+                                onValueChange = {
+                                    textSubject = it
+                                },
                                 placeholder = {
                                     Text(
-                                        text = when (SettingPreferences.isSelectedLanguage) {
-                                            SettingPreferences.INDONESIA -> {
-                                                "contoh: bug, kritik, saran"
-                                            }
-
-                                            else -> {
-                                                "example : bugs, criticism, suggestions"
-                                            }
-                                        },
+                                        text = if (isIndonesia) {
+                                            "contoh: bug, kritik, saran"
+                                        } else {
+                                            "example: bugs, criticism, suggestions"
+                                        }
                                     )
                                 },
                                 label = {
                                     Text(
-                                        when (SettingPreferences.isSelectedLanguage) {
-                                            SettingPreferences.INDONESIA -> {
-                                                "Perihal"
-                                            }
-
-                                            else -> {
-                                                "Subject"
-                                            }
-                                        },
+                                        text = if (isIndonesia) {
+                                            "Perihal"
+                                        } else {
+                                            "Subject"
+                                        }
                                     )
                                 }
                             )
+
                             OutlinedTextField(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(2f)
                                     .padding(horizontal = 16.dp),
                                 value = textMessage,
-                                onValueChange = { textMessage = it },
+                                onValueChange = {
+                                    textMessage = it
+                                },
                                 label = {
                                     Text(
-                                        when (SettingPreferences.isSelectedLanguage) {
-                                            SettingPreferences.INDONESIA -> {
-                                                "Pesan"
-                                            }
-
-                                            else -> {
-                                                "Message"
-                                            }
-                                        },
+                                        text = if (isIndonesia) {
+                                            "Pesan"
+                                        } else {
+                                            "Message"
+                                        }
                                     )
-                                },
+                                }
                             )
+
                             Button(
                                 onClick = {
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        putExtra(Intent.EXTRA_EMAIL, arrayOf(developerEmail))
+                                        putExtra(Intent.EXTRA_SUBJECT, textSubject)
+                                        putExtra(Intent.EXTRA_TEXT, textMessage)
+                                        type = "message/rfc822"
+                                    }
 
-                                    val i = Intent(Intent.ACTION_SEND)
-
-                                    // on below line we are passing email address,
-                                    // email subject and email body
-                                    val emailAddress = emailDeveloper
-                                    i.putExtra(Intent.EXTRA_EMAIL, emailAddress)
-                                    i.putExtra(Intent.EXTRA_SUBJECT, textSubject)
-                                    i.putExtra(Intent.EXTRA_TEXT, textMessage)
-
-                                    // on below line we are
-                                    // setting type of intent
-                                    i.type = "message/rfc822"
-
-                                    // on the below line we are starting our activity to open email application.
                                     context.startActivity(
                                         Intent.createChooser(
-                                            i,
-                                            "Choose an Email client : "
+                                            intent,
+                                            if (isIndonesia) {
+                                                "Pilih aplikasi email"
+                                            } else {
+                                                "Choose an Email client"
+                                            }
                                         )
                                     )
                                 },
-                                Modifier
+                                modifier = Modifier
                                     .align(Alignment.End)
-                                    .padding(end = 16.dp, bottom = 16.dp, top = 8.dp)
+                                    .padding(
+                                        end = 16.dp,
+                                        bottom = 16.dp,
+                                        top = 8.dp
+                                    )
                             ) {
                                 Text(
-                                    when (SettingPreferences.isSelectedLanguage) {
-                                        SettingPreferences.INDONESIA -> {
-                                            "Kirim"
-                                        }
-
-                                        else -> {
-                                            "Send"
-                                        }
-                                    },
+                                    text = if (isIndonesia) {
+                                        "Kirim"
+                                    } else {
+                                        "Send"
+                                    }
                                 )
                             }
                         }
